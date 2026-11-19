@@ -174,6 +174,20 @@ Contract*, *Cancellation Contract*; public routes and headers are in
 - **`max_tokens` is not enforced by default:** the Agent SDK exposes no output
   cap, and the CLI's cap counts thinking plus text, so an answer-sized cap can
   leave no room for an answer. `MERIDIAN_ENFORCE_MAX_TOKENS=1` honors it exactly.
+- **Per-request cache lifetime** (`cacheTtl.ts`, x-squadron fork,
+  2026-11-17). On a subscription the CLI writes the one-hour tier, which costs
+  2x the input price against 1.25x for the five-minute tier. A client whose
+  calls come in bursts and never return after an hour (a CI review) pays the
+  difference on every write. `x-meridian-cache-ttl: 5m` sets
+  `FORCE_PROMPT_CACHING_5M=1` for the request, as auxiliary requests already
+  get.
+  - *A header, not a profile setting.* The lifetime belongs to the caller's
+    workload, not to the account, so it holds when a gateway fails the caller
+    over to another profile.
+  - *Only `5m`.* Any other value is a 400, so a typo never silently keeps the
+    hour. Absent keeps today's behavior exactly.
+  - *Keepalive needs nothing.* A turn that writes the five-minute tier already
+    stops keepalive tracking for its session.
 - **Prompt-cache keepalive** (#1193, contributed by @XInTheDark, redesigned
   with the owner 2026-10-26; `cacheKeepalive.ts` schedules, pure;
   `cacheKeepaliveRunner.ts` sends one beat).
